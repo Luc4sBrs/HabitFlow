@@ -74,4 +74,26 @@ class HabitController extends AsyncNotifier<List<HabitModel>> {
     final repository = ref.read(habitRepositoryProvider);
     await repository.deleteHabit(id);
   }
+  // Adicione esses métodos dentro da classe HabitController:
+
+  Future<String> exportBackup() async {
+    final repository = ref.read(habitRepositoryProvider);
+    return repository.exportBackupJson();
+  }
+
+  Future<bool> restoreBackup(String rawJson) async {
+    final repository = ref.read(habitRepositoryProvider);
+    final success = await repository.importBackupJson(rawJson);
+    if (success) {
+      // Recarrega o estado reativo da aplicação imediatamente
+      state = AsyncData(await repository.getAllHabits());
+    }
+    return success;
+  }
+
+  Future<void> resetAllData() async {
+    final repository = ref.read(habitRepositoryProvider);
+    await repository.clearAll();
+    state = const AsyncData([]);
+  }
 }

@@ -32,10 +32,10 @@ class HabitModel {
   int calculateStreak() {
     if (completedDates.isEmpty) return 0;
 
-    final sortedDates = completedDates
+    completedDates
         .map((d) => DateTime.parse(d))
         .toList()
-      ..sort((a, b) => b.compareTo(a));
+      .sort((a, b) => b.compareTo(a));
 
     final today = DateTime.now();
     final todayKey = _toDateKey(today);

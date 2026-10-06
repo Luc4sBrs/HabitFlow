@@ -10,6 +10,9 @@ abstract class IHabitRepository {
   Future<void> saveHabit(HabitModel habit);
   Future<void> updateHabit(HabitModel habit);
   Future<void> deleteHabit(String id);
+  Future<String> exportBackupJson(); // <-- NOVO
+  Future<bool> importBackupJson(String rawJson); // <-- NOVO
+  Future<void> clearAll(); // <-- NOVO
 }
 
 final habitRepositoryProvider = Provider<IHabitRepository>((ref) {
@@ -57,6 +60,36 @@ class HabitRepositoryImpl implements IHabitRepository {
     await _persist(habits);
   }
 
+  @override
+  Future<String> exportBackupJson() async {
+    final habits = await getAllHabits();
+    final rawList = habits.map((h) => h.toJson()).toList();
+    return const JsonEncoder.withIndent('  ').convert(rawList);
+  }
+
+  @override
+  Future<bool> importBackupJson(String rawJson) async {
+    try {
+      final decoded = jsonDecode(rawJson);
+      if (decoded is! List) return false;
+
+      final habits = decoded
+          .map((item) => HabitModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      await _persist(habits);
+      return true;
+    } catch (_) {
+      return false; // Retorna falso se o JSON for inválido
+    }
+  }
+
+  @override
+  Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey);
+  }
+
   Future<void> _persist(List<HabitModel> habits) async {
     final prefs = await SharedPreferences.getInstance();
     final encoded = habits.map((h) => jsonEncode(h.toJson())).toList();
@@ -72,7 +105,7 @@ class HabitRepositoryImpl implements IHabitRepository {
         id: '1',
         title: 'Meditação Matinal',
         description: '10 minutos de respiração e foco consciente',
-        iconCode: 'self_improvement',
+        iconCode: 'mind',
         colorValue: 0xFF6366F1,
         completedDates: [todayStr],
         createdAt: now.subtract(const Duration(days: 3)),
@@ -81,7 +114,7 @@ class HabitRepositoryImpl implements IHabitRepository {
         id: '2',
         title: 'Leitura Técnica',
         description: 'Ler 15 páginas de arquitetura de software',
-        iconCode: 'menu_book',
+        iconCode: 'book',
         colorValue: 0xFF10B981,
         completedDates: [],
         createdAt: now.subtract(const Duration(days: 2)),
